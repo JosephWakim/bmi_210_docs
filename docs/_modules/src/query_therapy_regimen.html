@@ -1,0 +1,567 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>src.query_therapy_regimen &mdash; UniOnco  documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="UniOnco  documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> UniOnco
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <p class="caption"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../abstract.html">Abstract</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background.html">Background</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Demos</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../CIViC_API_Usage.html">CIViC API Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cBioPortal_API_Usage.html">cBioPortal API Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../query_therapy_regimen.html">Query Ontology</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../references.html">References</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">UniOnco</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>src.query_therapy_regimen</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for src.query_therapy_regimen</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Query for `TherapyRegimen` associated with mutated genes.</span>
+
+<span class="sd">Corresponding Authors:  Joseph Wakim, Vinodh Rajapakse</span>
+<span class="sd">Affiliation:            Stanford</span>
+<span class="sd">Date:                   March 3, 2022</span>
+
+<span class="sd">USAGE: python query_therapy_regimen.py &lt;ONTOLOGY_PATH&gt; &lt;MUTATION_TABLE_PATH&gt;</span>
+<span class="sd">            &lt;GENE_LIST_PATH&gt; &lt;CLINICAL_DATA_PATH&gt; &lt;CANCER_TYPE_PATH&gt;</span>
+<span class="sd">            &lt;PATIENT_NAME&gt; &lt;REGIMEN_SAVE_PATH&gt;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">owlready2</span> <span class="k">as</span> <span class="nn">or2</span>
+
+<span class="kn">from</span> <span class="nn">sample_patients</span> <span class="k">import</span> <span class="n">get_patient_mutation_data</span>
+
+
+<div class="viewcode-block" id="load_ongology"><a class="viewcode-back" href="../../modules.html#src.query_therapy_regimen.load_ongology">[docs]</a><span class="k">def</span> <span class="nf">load_ongology</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">or2</span><span class="o">.</span><span class="n">namespace</span><span class="o">.</span><span class="n">Ontology</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Load ontology from specified file path.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str</span>
+<span class="sd">        Path to the ontology in the local directory</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    or2.namespace.Ontology</span>
+<span class="sd">        Object representing the ontology in owlready2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">or2</span><span class="o">.</span><span class="n">get_ontology</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="get_mutation_data"><a class="viewcode-back" href="../../modules.html#src.query_therapy_regimen.get_mutation_data">[docs]</a><span class="k">def</span> <span class="nf">get_mutation_data</span><span class="p">(</span>
+        <span class="n">csv_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">gene_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">clinical_data_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">cancer_types_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">df_mutations</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">df_genes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">df_clinical_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">df_cancer_types</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Get cBioPortal mutation data and add gene labels, if available.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    csv_path : str</span>
+<span class="sd">        Path to csv file containing mutation data (if `df_mutation` is not None,</span>
+<span class="sd">        this path has no effect)</span>
+<span class="sd">    gene_path : str</span>
+<span class="sd">        Path to table of genes associated with cancer and their entrez IDs (if</span>
+<span class="sd">        `df_genes` is not None, this path has no effect)</span>
+<span class="sd">    clinical_data_path : str</span>
+<span class="sd">        Path to table of patient records with associated diseases (if</span>
+<span class="sd">        `df_clinical_data` is not None, this path has no effect)</span>
+<span class="sd">    cancer_types_path : str</span>
+<span class="sd">        Path to table of cancer types and abbreviations (if `df_cancer_types` is</span>
+<span class="sd">        not None, this path has no effect)</span>
+<span class="sd">    df_mutations: Optional[pd.DataFrame]</span>
+<span class="sd">        If a mutation table is loaded as a Pandas DataFrame, you can enter the</span>
+<span class="sd">        DataFrame object under this argument to avoid reloading the mutation</span>
+<span class="sd">        data (default = None)</span>
+<span class="sd">    df_genes : Optional[pd.DataFrame]</span>
+<span class="sd">        If a gene table is already loaded as a Pandas DataFrame, you can enter</span>
+<span class="sd">        the DataFrame object under this argument to avoid reloading the gene</span>
+<span class="sd">        data (default = None)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        Table of patients with mutations and associated genes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">columns_of_interest</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;patientId&quot;</span><span class="p">,</span> <span class="s2">&quot;proteinChange&quot;</span><span class="p">,</span> <span class="s2">&quot;entrezGeneId&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">df_mutations</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">df_mutations</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">csv_path</span><span class="p">)</span>
+    <span class="n">df_mutations</span> <span class="o">=</span> <span class="n">df_mutations</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">columns_of_interest</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">df_genes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">df_genes</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">gene_path</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">df_genes</span><span class="p">[</span><span class="s2">&quot;Entrez_Id&quot;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="n">df_genes</span><span class="p">[</span><span class="s2">&quot;Entrez_Id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;int&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;str&quot;</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df_mutations</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+        <span class="n">df_genes</span><span class="p">,</span> <span class="n">left_on</span><span class="o">=</span><span class="s2">&quot;entrezGeneId&quot;</span><span class="p">,</span> <span class="n">right_on</span><span class="o">=</span><span class="s2">&quot;Entrez_Id&quot;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;Entrez_Id&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">df_clinical_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">df_clinical_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+            <span class="n">clinical_data_path</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">df_clinical_data</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s2">&quot;patientId&quot;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="s2">&quot;patientId&quot;</span><span class="p">,</span> <span class="s2">&quot;proteinChange&quot;</span><span class="p">,</span> <span class="s2">&quot;Gene_Symbol&quot;</span><span class="p">,</span> <span class="s2">&quot;entrezGeneId&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">]]</span>
+
+    <span class="k">if</span> <span class="n">df_cancer_types</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">df_cancer_types</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">cancer_types_path</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">df_cancer_types</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="s1">&#39;patientId&#39;</span><span class="p">,</span> <span class="s1">&#39;proteinChange&#39;</span><span class="p">,</span> <span class="s1">&#39;Gene_Symbol&#39;</span><span class="p">,</span> <span class="s1">&#39;entrezGeneId&#39;</span><span class="p">,</span> <span class="s1">&#39;shortName&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">df</span></div>
+
+
+<div class="viewcode-block" id="get_therapy_given_gene"><a class="viewcode-back" href="../../modules.html#src.query_therapy_regimen.get_therapy_given_gene">[docs]</a><span class="k">def</span> <span class="nf">get_therapy_given_gene</span><span class="p">(</span>
+    <span class="n">ontology</span><span class="p">:</span> <span class="n">or2</span><span class="o">.</span><span class="n">namespace</span><span class="o">.</span><span class="n">Ontology</span><span class="p">,</span> <span class="n">gene</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">evidence_level</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Query ontology for therapy regimen associated with mutation in gene.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ontology : or2.namespace.Ontology</span>
+<span class="sd">        OWL ontology from which to query therapy regimens matching mutated gene</span>
+<span class="sd">    gene : str</span>
+<span class="sd">        Gene for which to query therapy regimen</span>
+<span class="sd">    evidence_level : str</span>
+<span class="sd">        Evidence level of therapy regemen to query for in ontology</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    List[str]</span>
+<span class="sd">        List of therapy regimens associated with gene of interest</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">ontology</span><span class="p">:</span>
+        <span class="n">therapy_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+            <span class="n">or2</span><span class="o">.</span><span class="n">default_world</span><span class="o">.</span><span class="n">sparql</span><span class="p">(</span>
+                <span class="n">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                SELECT distinct ?regimen</span>
+<span class="s2">                {{</span>
+<span class="s2">                    ?biomarker rdfs:subClassOf oncokb:Biomarker.</span>
+<span class="s2">                    ?biomarker rdfs:subClassOf ?r1.</span>
+<span class="s2">                    ?r1 owl:onProperty oncokb:hasGene.</span>
+<span class="s2">                    ?r1 owl:someValuesFrom oncokb:{re.escape(gene)}.</span>
+<span class="s2">                    </span>
+<span class="s2">                    ?regimen rdfs:subClassOf oncokb:TherapyRegimen.</span>
+<span class="s2">                    ?regimen rdfs:subClassOf ?r2.</span>
+<span class="s2">                    ?r2 owl:onProperty oncokb:hasEvidenceLevel</span><span class="si">{evidence_level}</span><span class="s2">.</span>
+<span class="s2">                    ?r2 owl:someValuesFrom ?biomarker.</span>
+<span class="s2">                }}</span>
+<span class="s2">                &quot;&quot;&quot;</span><span class="p">,</span> <span class="n">error_on_undefined_entities</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="n">therapy_list</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">gene</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">gene</span> <span class="ow">in</span> <span class="n">therapy_list</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">therapy_list</span></div>
+
+
+<div class="viewcode-block" id="get_therapy_given_gene_variant"><a class="viewcode-back" href="../../modules.html#src.query_therapy_regimen.get_therapy_given_gene_variant">[docs]</a><span class="k">def</span> <span class="nf">get_therapy_given_gene_variant</span><span class="p">(</span>
+    <span class="n">ontology</span><span class="p">:</span> <span class="n">or2</span><span class="o">.</span><span class="n">namespace</span><span class="o">.</span><span class="n">Ontology</span><span class="p">,</span> <span class="n">gene</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">variant</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">evidence_level</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Query ontology for therapy matching gene and variant.</span>
+
+<span class="sd">    Given a patient&#39;s gene and variant, query the ontology for all therapy</span>
+<span class="sd">    regimens.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ontology : or2.namespace.Ontology</span>
+<span class="sd">        OWL ontology from which to query therapy regimens matching mutated gene</span>
+<span class="sd">    gene : str</span>
+<span class="sd">        Gene for which to query therapy regimen</span>
+<span class="sd">    variant : str</span>
+<span class="sd">        Specific variant of gene for which to query therapy regiment</span>
+<span class="sd">    evidence_level : str</span>
+<span class="sd">        Evidence level of therapy regemen to query for in ontology</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    List[str]</span>
+<span class="sd">        List of therapy regimens associated with the gene and variant</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">ontology</span><span class="p">:</span>
+        <span class="n">treatments</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+            <span class="n">or2</span><span class="o">.</span><span class="n">default_world</span><span class="o">.</span><span class="n">sparql</span><span class="p">(</span>
+                <span class="n">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                SELECT distinct ?regimen</span>
+<span class="s2">                {{</span>
+<span class="s2">                    ?biomarker rdfs:subClassOf oncokb:Biomarker.</span>
+<span class="s2">                    ?biomarker rdfs:subClassOf ?R1.</span>
+<span class="s2">                    ?R1 owl:onProperty oncokb:hasGene.</span>
+<span class="s2">                    ?R1 owl:someValuesFrom oncokb:{re.escape(gene)}.</span>
+<span class="s2">                    </span>
+<span class="s2">                    ?biomarker rdfs:subClassOf ?R2.</span>
+<span class="s2">                    ?R2 owl:onProperty oncokb:hasVariant.</span>
+<span class="s2">                    ?R2 owl:someValuesFrom oncokb:{re.escape(variant)}.</span>
+<span class="s2">                    </span>
+<span class="s2">                    ?regimen rdfs:subClassOf oncokb:TherapyRegimen.</span>
+<span class="s2">                    ?regimen rdfs:subClassOf ?R3.</span>
+<span class="s2">                    ?R3 owl:onProperty oncokb:hasEvidenceLevel</span><span class="si">{evidence_level}</span><span class="s2">.</span>
+<span class="s2">                    ?R3 owl:someValuesFrom ?biomarker.</span>
+<span class="s2">                }}</span>
+<span class="s2">                &quot;&quot;&quot;</span><span class="p">,</span> <span class="n">error_on_undefined_entities</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">tx</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">tx</span> <span class="ow">in</span> <span class="n">treatments</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="get_therapy_given_gene_variant_disease"><a class="viewcode-back" href="../../modules.html#src.query_therapy_regimen.get_therapy_given_gene_variant_disease">[docs]</a><span class="k">def</span> <span class="nf">get_therapy_given_gene_variant_disease</span><span class="p">(</span>
+    <span class="n">ontology</span><span class="p">:</span> <span class="n">or2</span><span class="o">.</span><span class="n">namespace</span><span class="o">.</span><span class="n">Ontology</span><span class="p">,</span> <span class="n">gene</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">variant</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">disease</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">evidence_level</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Query ontology for therapy matching gene, variant, disease, and evidence.</span>
+
+<span class="sd">    Given a patient&#39;s gene, variant, and disease, query the ontology for</span>
+<span class="sd">    therapy regimens with a specified evidence level.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ontology : or2.namespace.Ontology</span>
+<span class="sd">        OWL ontology from which to query therapy regimens matching mutated gene</span>
+<span class="sd">    gene : str</span>
+<span class="sd">        Gene for which to query therapy regimen</span>
+<span class="sd">    variant : str</span>
+<span class="sd">        Specific variant of gene for which to query therapy regiment</span>
+<span class="sd">    disease : str</span>
+<span class="sd">        Specific disease associated with gene and variant for which to query the</span>
+<span class="sd">        ontology</span>
+<span class="sd">    evidence_level : str</span>
+<span class="sd">        Evidence level of therapy regemen to query for in ontology</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    List[str]</span>
+<span class="sd">        List of therapy regimens associated with the gene, variant, and disease</span>
+<span class="sd">        matching records in the ontology</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">ontology</span><span class="p">:</span>
+        <span class="n">treatments</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+            <span class="n">or2</span><span class="o">.</span><span class="n">default_world</span><span class="o">.</span><span class="n">sparql</span><span class="p">(</span>
+                <span class="n">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                SELECT distinct ?regimen</span>
+<span class="s2">                {{</span>
+<span class="s2">                    ?biomarker rdfs:subClassOf oncokb:Biomarker.</span>
+<span class="s2">                    ?biomarker rdfs:subClassOf ?R1.</span>
+<span class="s2">                    ?R1 owl:onProperty oncokb:hasGene.</span>
+<span class="s2">                    ?R1 owl:someValuesFrom oncokb:{re.escape(gene)}.</span>
+<span class="s2">                    </span>
+<span class="s2">                    ?biomarker rdfs:subClassOf ?R2.</span>
+<span class="s2">                    ?R2 owl:onProperty oncokb:hasVariant.</span>
+<span class="s2">                    ?R2 owl:someValuesFrom oncokb:{re.escape(variant)}.</span>
+<span class="s2">                    </span>
+<span class="s2">                    ?biomarker rdfs:subClassOf ?R3.</span>
+<span class="s2">                    ?R3 owl:onProperty oncokb:hasDisease.</span>
+<span class="s2">                    ?R3 owl:someValuesFrom oncokb:{re.escape(disease)}.</span>
+<span class="s2"> </span>
+<span class="s2">                    ?regimen rdfs:subClassOf oncokb:TherapyRegimen.</span>
+<span class="s2">                    ?regimen rdfs:subClassOf ?R4.</span>
+<span class="s2">                    ?R4 owl:onProperty oncokb:hasEvidenceLevel</span><span class="si">{evidence_level}</span><span class="s2">.</span>
+<span class="s2">                    ?R4 owl:someValuesFrom ?biomarker.</span>
+<span class="s2">                }}</span>
+<span class="s2">                &quot;&quot;&quot;</span><span class="p">,</span> <span class="n">error_on_undefined_entities</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">tx</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">tx</span> <span class="ow">in</span> <span class="n">treatments</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../modules.html#src.query_therapy_regimen.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span>
+    <span class="n">ontology_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">mutation_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">gene_list_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">clinical_data_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">cancer_type_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">regimen_save_path</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Save potential therapy regimen associated with mutated gene in patient.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ontology_path : str</span>
+<span class="sd">        Path to our custom ontology combining biomedical data sources</span>
+<span class="sd">    mutation_path : str</span>
+<span class="sd">        Path to patient mutation data extracted from cBioPortal</span>
+<span class="sd">    gene_list_path : str</span>
+<span class="sd">        Path to table of genes associated with cancer and their entrez IDs</span>
+<span class="sd">    clinical_data_path : str</span>
+<span class="sd">        Path to table of patient records with associated diseases</span>
+<span class="sd">    cancer_types_path : str</span>
+<span class="sd">        Path to table of cancer types and abbreviations</span>
+<span class="sd">    patient_id : str</span>
+<span class="sd">        Patient identifier matching record in cBioPortal mutation table</span>
+<span class="sd">    regimen_save_path : str</span>
+<span class="sd">        Path at which to save list of regimens associated with each affected</span>
+<span class="sd">        gene in the patient</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ontology</span> <span class="o">=</span> <span class="n">load_ongology</span><span class="p">(</span><span class="n">ontology_path</span><span class="p">)</span>
+    <span class="n">df_mutation</span> <span class="o">=</span> <span class="n">get_patient_mutation_data</span><span class="p">(</span>
+        <span class="n">mutation_path</span><span class="p">,</span> <span class="n">patient_id</span>
+    <span class="p">)</span>
+    <span class="n">mutation_data</span> <span class="o">=</span> <span class="n">get_mutation_data</span><span class="p">(</span>
+        <span class="n">mutation_path</span><span class="p">,</span> <span class="n">gene_list_path</span><span class="p">,</span> <span class="n">clinical_data_path</span><span class="p">,</span> <span class="n">cancer_type_path</span><span class="p">,</span>
+        <span class="n">df_mutations</span><span class="o">=</span><span class="n">df_mutation</span>
+    <span class="p">)</span>
+    <span class="n">genes</span> <span class="o">=</span> <span class="n">mutation_data</span><span class="p">[</span><span class="s2">&quot;Gene_Symbol&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+    <span class="n">variants</span> <span class="o">=</span> <span class="n">mutation_data</span><span class="p">[</span><span class="s2">&quot;proteinChange&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+    <span class="n">diseases</span> <span class="o">=</span> <span class="n">mutation_data</span><span class="p">[</span><span class="s2">&quot;shortName&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+    <span class="n">evidence_levels</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="s2">&quot;4&quot;</span><span class="p">,</span> <span class="s2">&quot;R1&quot;</span><span class="p">,</span> <span class="s2">&quot;R2&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Clear file</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">regimen_save_path</span><span class="p">):</span>
+        <span class="n">file_temp</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">regimen_save_path</span><span class="p">,</span> <span class="s1">&#39;r+&#39;</span><span class="p">)</span>
+        <span class="n">file_temp</span><span class="o">.</span><span class="n">truncate</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">file_temp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># Write therapy regimen to file</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">regimen_save_path</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">gene</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">genes</span><span class="p">):</span>
+            <span class="n">variant</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">variants</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">disease</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">diseases</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">evidence</span> <span class="ow">in</span> <span class="n">evidence_levels</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">therapy_list</span> <span class="o">=</span> <span class="n">get_therapy_given_gene_variant_disease</span><span class="p">(</span>
+                        <span class="n">ontology</span><span class="p">,</span> <span class="n">gene</span><span class="p">,</span> <span class="n">variant</span><span class="p">,</span> <span class="n">disease</span><span class="p">,</span> <span class="n">evidence</span>
+                    <span class="p">)</span>
+                    <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span>
+                        <span class="p">[</span><span class="n">gene</span><span class="p">,</span> <span class="n">variant</span><span class="p">,</span> <span class="n">disease</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;level</span><span class="si">{evidence}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">therapy_list</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Run the module as a command line tool.</span>
+<span class="sd">    </span>
+<span class="sd">    Creates a file with therapy regimen for specified user.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">onto_path</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">mut_tbl_path</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">gene_lst_path</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">clinical_data_path</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+    <span class="n">cancer_type_path</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+    <span class="n">pat_id</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span>
+    <span class="n">therapy_save_path</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span>
+    <span class="n">main</span><span class="p">(</span>
+        <span class="n">onto_path</span><span class="p">,</span> <span class="n">mut_tbl_path</span><span class="p">,</span> <span class="n">gene_lst_path</span><span class="p">,</span> <span class="n">clinical_data_path</span><span class="p">,</span>
+        <span class="n">cancer_type_path</span><span class="p">,</span> <span class="n">pat_id</span><span class="p">,</span> <span class="n">therapy_save_path</span>
+    <span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2022, Jackson Michuda, Abby Pandya, Vinodh Rajapakse, Joseph Wakim.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> and ❤️  using a custom <a href="https://github.com/LinxiFan/Sphinx-theme">theme</a> based on <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="../../_static/language_data.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="../../None"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,505 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>src.access_cBioPortal &mdash; UniOnco  documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="UniOnco  documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> UniOnco
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <p class="caption"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../abstract.html">Abstract</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background.html">Background</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Demos</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../CIViC_API_Usage.html">CIViC API Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cBioPortal_API_Usage.html">cBioPortal API Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../query_therapy_regimen.html">Query Ontology</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../references.html">References</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">UniOnco</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>src.access_cBioPortal</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for src.access_cBioPortal</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Access cBioPortal in a format compatible with Snakefile.</span>
+
+<span class="sd">This module accesses tools in cBioPortal in a format that works with our</span>
+<span class="sd">pipeline for automatic ontology generation.</span>
+
+<span class="sd">Corresponding Author:   Joseph Wakim</span>
+<span class="sd">Affiliation:            Stanford</span>
+<span class="sd">Date:                   February 27, 2022</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">bravado.client</span> <span class="k">import</span> <span class="n">SwaggerClient</span>
+
+<span class="kn">import</span> <span class="nn">api_tools</span> <span class="k">as</span> <span class="nn">apit</span>
+
+
+<span class="n">endpoint_set</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;Molecular Profiles&quot;</span><span class="p">,</span> <span class="s2">&quot;Studies&quot;</span><span class="p">,</span> <span class="s2">&quot;Sample Lists&quot;</span><span class="p">,</span> <span class="s2">&quot;Cancer Types&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Patients&quot;</span><span class="p">,</span> <span class="s2">&quot;Samples&quot;</span><span class="p">,</span> <span class="s2">&quot;Clinical Data&quot;</span><span class="p">,</span> <span class="s2">&quot;Mutations&quot;</span>
+<span class="p">}</span>
+
+<span class="n">simple_api_methods</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;Molecular Profiles&quot;</span><span class="p">:</span> <span class="s2">&quot;getAllMolecularProfilesUsingGET&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Studies&quot;</span><span class="p">:</span> <span class="s2">&quot;getAllStudiesUsingGET&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Sample Lists&quot;</span><span class="p">:</span> <span class="s2">&quot;getAllSampleListsUsingGET&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Cancer Types&quot;</span><span class="p">:</span> <span class="s2">&quot;getAllCancerTypesUsingGET&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Patients&quot;</span><span class="p">:</span> <span class="s2">&quot;getAllPatientsUsingGET&quot;</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="get_all_from_bioportal_endpoint"><a class="viewcode-back" href="../../modules.html#src.access_cBioPortal.get_all_from_bioportal_endpoint">[docs]</a><span class="k">def</span> <span class="nf">get_all_from_bioportal_endpoint</span><span class="p">(</span>
+    <span class="n">client</span><span class="p">:</span> <span class="n">SwaggerClient</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">out_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Load all data from an endpoint of cBioPortal</span>
+
+<span class="sd">    Wrapper for cBioPortal convenience functions. Returns a Pandas DataFrame,</span>
+<span class="sd">    which we can use to populate our ontology.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    client : SwaggerClient</span>
+<span class="sd">        Swagger client accessing the cBioPortal database</span>
+<span class="sd">    endpoint : str</span>
+<span class="sd">        Name of the cBioPortal endpoint from which to load data</span>
+<span class="sd">    out_path : Optional[str]</span>
+<span class="sd">        Path relative to current working directory at which to save output of</span>
+<span class="sd">        mutations data.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        Table of data at specified endpoint.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">endpoint</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">endpoint_set</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="n">f</span><span class="s2">&quot;Specified endpoint `</span><span class="si">{endpoint}</span><span class="s2">` not found in cBioPortal.&quot;</span>
+        <span class="p">)</span>
+    <span class="n">obj</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">endpoint</span> <span class="ow">in</span> <span class="n">simple_api_methods</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">all_records</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">simple_api_methods</span><span class="p">[</span><span class="n">endpoint</span><span class="p">])()</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">apit</span><span class="o">.</span><span class="n">swagger_endpoint_data_to_df</span><span class="p">(</span><span class="n">all_records</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">out_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">out_path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">df</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">endpoint</span> <span class="o">==</span> <span class="s2">&quot;Samples&quot;</span><span class="p">:</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">get_all_samples</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">out_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">out_path</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">df</span>
+        <span class="k">elif</span> <span class="n">endpoint</span> <span class="o">==</span> <span class="s2">&quot;Clinical Data&quot;</span><span class="p">:</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">get_patient_cancer_types</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">out_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">out_path</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">df</span>
+        <span class="k">elif</span> <span class="n">endpoint</span> <span class="o">==</span> <span class="s2">&quot;Mutations&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">out_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Specify an output directory to save mutation data.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">get_mutations</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">out_path</span><span class="o">=</span><span class="n">out_path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_unique_study_ids"><a class="viewcode-back" href="../../modules.html#src.access_cBioPortal.get_unique_study_ids">[docs]</a><span class="k">def</span> <span class="nf">get_unique_study_ids</span><span class="p">(</span><span class="n">client</span><span class="p">:</span> <span class="n">SwaggerClient</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get unique study IDs from cBioPortal</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    client : SwaggerClient</span>
+<span class="sd">        Swagger Client accessing the  cBioPortal database</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Sequence[str]</span>
+<span class="sd">        Array of unique study IDs</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">studies</span> <span class="o">=</span> <span class="n">get_all_from_bioportal_endpoint</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;Studies&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">studies</span><span class="o">.</span><span class="n">studyId</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="get_all_samples"><a class="viewcode-back" href="../../modules.html#src.access_cBioPortal.get_all_samples">[docs]</a><span class="k">def</span> <span class="nf">get_all_samples</span><span class="p">(</span>
+    <span class="n">client</span><span class="p">:</span> <span class="n">SwaggerClient</span><span class="p">,</span> <span class="n">unique_study_ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Get all samples from all studies.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    client : SwaggerClient</span>
+<span class="sd">        Swagger client accessing the cBioPortal database</span>
+<span class="sd">    unique_study_ids : Optional[Sequence[str]]</span>
+<span class="sd">        List of unique study IDs (default = None). If argument is not specified,</span>
+<span class="sd">        then a list of all unique study IDs is determined.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        Table of sample data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">obj</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">Samples</span>
+
+    <span class="k">if</span> <span class="n">unique_study_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">unique_study_ids</span> <span class="o">=</span> <span class="n">get_unique_study_ids</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+
+    <span class="n">df_samples</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+    <span class="n">n_studies</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_study_ids</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">study</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">unique_study_ids</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Parsing Study {i+1} of </span><span class="si">{n_studies}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">all_samples</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">getAllSamplesInStudyUsingGET</span><span class="p">(</span><span class="n">studyId</span><span class="o">=</span><span class="n">study</span><span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">headers</span> <span class="o">=</span> <span class="nb">dir</span><span class="p">(</span><span class="n">all_samples</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">df_temp</span> <span class="o">=</span> <span class="n">apit</span><span class="o">.</span><span class="n">swagger_endpoint_data_to_df</span><span class="p">(</span><span class="n">all_samples</span><span class="p">,</span> <span class="n">headers</span><span class="p">)</span>
+        <span class="n">df_samples</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df_samples</span><span class="p">,</span> <span class="n">df_temp</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">df_samples</span></div>
+
+
+<div class="viewcode-block" id="get_patient_cancer_types"><a class="viewcode-back" href="../../modules.html#src.access_cBioPortal.get_patient_cancer_types">[docs]</a><span class="k">def</span> <span class="nf">get_patient_cancer_types</span><span class="p">(</span>
+    <span class="n">client</span><span class="p">:</span> <span class="n">SwaggerClient</span><span class="p">,</span> <span class="n">unique_study_ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Get all samples from all studies.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    client : SwaggerClient</span>
+<span class="sd">        Swagger client accessing the cBioPortal database</span>
+<span class="sd">    unique_study_ids : Optional[Sequence[str]]</span>
+<span class="sd">        List of unique study IDs (default = None). If argument is not specified,</span>
+<span class="sd">        then a list of all unique study IDs is determined.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        Table of patient cancer types</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">obj</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">Clinical_Data</span>
+
+    <span class="k">if</span> <span class="n">unique_study_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">unique_study_ids</span> <span class="o">=</span> <span class="n">get_unique_study_ids</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+
+    <span class="n">df_clinical_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+    <span class="n">n_studies</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_study_ids</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">study</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">unique_study_ids</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Parsing Study {i+1} of </span><span class="si">{n_studies}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">all_clinical_data</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">getAllClinicalDataInStudyUsingGET</span><span class="p">(</span>
+            <span class="n">studyId</span> <span class="o">=</span> <span class="n">study</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">headers</span> <span class="o">=</span> <span class="nb">dir</span><span class="p">(</span><span class="n">all_clinical_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">df_temp</span> <span class="o">=</span> <span class="n">apit</span><span class="o">.</span><span class="n">swagger_endpoint_data_to_df</span><span class="p">(</span><span class="n">all_clinical_data</span><span class="p">,</span> <span class="n">headers</span><span class="p">)</span>
+        <span class="n">df_clinical_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df_clinical_data</span><span class="p">,</span> <span class="n">df_temp</span><span class="p">])</span>
+
+    <span class="n">df_clinical_data</span> <span class="o">=</span> <span class="n">df_clinical_data</span><span class="p">[</span>
+        <span class="n">df_clinical_data</span><span class="p">[</span><span class="s2">&quot;clinicalAttributeId&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;CANCER_TYPE&quot;</span>
+    <span class="p">]</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span>
+
+    <span class="n">relevant_columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;patientId&quot;</span><span class="p">,</span> <span class="s2">&quot;sampleId&quot;</span><span class="p">,</span> <span class="s2">&quot;studyId&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">]</span>
+    <span class="n">df_patient_cancer_types</span> <span class="o">=</span> <span class="n">df_clinical_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">relevant_columns</span><span class="p">]</span>
+    <span class="n">df_patient_cancer_types</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="s1">&#39;name&#39;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">df_cancer_types</span> <span class="o">=</span> <span class="n">get_all_from_bioportal_endpoint</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;Cancer Types&quot;</span><span class="p">)</span>
+    <span class="n">df_patient_cancer_types</span> <span class="o">=</span> <span class="n">df_patient_cancer_types</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+        <span class="n">df_cancer_types</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">df_patient_cancer_types</span></div>
+
+
+<div class="viewcode-block" id="get_mutations"><a class="viewcode-back" href="../../modules.html#src.access_cBioPortal.get_mutations">[docs]</a><span class="k">def</span> <span class="nf">get_mutations</span><span class="p">(</span>
+    <span class="n">client</span><span class="p">:</span> <span class="n">SwaggerClient</span><span class="p">,</span>
+    <span class="n">out_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">gene_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">df_molecular_profiles</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">df_sample_lists</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get all mutations in cBioPortal corresponding to a gene in gene_list.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    client : SwaggerClient</span>
+<span class="sd">        Swagger client accessing the cBioPortal database</span>
+<span class="sd">    out_path : str</span>
+<span class="sd">        Path relative to current working directory at which to save CSV file of</span>
+<span class="sd">        variants</span>
+<span class="sd">    gene_list : Optional[Sequence[str]]</span>
+<span class="sd">        List of genes to which variants will be filtered (default = None); if</span>
+<span class="sd">        the argument is not specified, no variants will be filtered</span>
+<span class="sd">    df_molecular_profiles : Optional[pd.DataFrame]</span>
+<span class="sd">        Table of molecular profiles</span>
+<span class="sd">    df_sample_lists : Optional[pd.DataFrame]</span>
+<span class="sd">        Table of sample lists</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mutations</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">Mutations</span>
+    <span class="n">df_temp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="nb">list</span><span class="p">())</span>
+    <span class="n">df_temp</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">out_path</span><span class="p">)</span>
+    <span class="n">empty</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">if</span> <span class="n">df_molecular_profiles</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">df_molecular_profiles</span> <span class="o">=</span> <span class="n">get_all_from_bioportal_endpoint</span><span class="p">(</span>
+            <span class="n">client</span><span class="p">,</span> <span class="s2">&quot;Molecular Profiles&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">df_sample_lists</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">df_sample_lists</span> <span class="o">=</span> <span class="n">get_all_from_bioportal_endpoint</span><span class="p">(</span>
+            <span class="n">client</span><span class="p">,</span> <span class="s2">&quot;Sample Lists&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">df_joined</span> <span class="o">=</span> <span class="n">df_molecular_profiles</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+        <span class="n">df_sample_lists</span><span class="p">,</span>
+        <span class="n">on</span><span class="o">=</span><span class="s2">&quot;studyId&quot;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;outer&quot;</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="s2">&quot;molecularProfileId&quot;</span><span class="p">,</span> <span class="s2">&quot;sampleListId&quot;</span><span class="p">]]</span>
+    <span class="n">n_iters</span> <span class="o">=</span> <span class="n">df_joined</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_iters</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Getting mutation list {i+1} of </span><span class="si">{n_iters}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">all_mutations</span> <span class="o">=</span>\
+                <span class="n">mutations</span><span class="o">.</span><span class="n">getMutationsInMolecularProfileBySampleListIdUsingGET</span><span class="p">(</span>
+                    <span class="n">molecularProfileId</span> <span class="o">=</span> <span class="n">df_joined</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                    <span class="n">sampleListId</span> <span class="o">=</span> <span class="n">df_joined</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_mutations</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">df_temp</span> <span class="o">=</span> <span class="n">apit</span><span class="o">.</span><span class="n">swagger_endpoint_data_to_df</span><span class="p">(</span><span class="n">all_mutations</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">gene_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">df_temp</span> <span class="o">=</span> <span class="n">df_temp</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+                <span class="s2">&quot;proteinChange in @gene_list | gene in @gene_list | entrezGeneId in @gene_list&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">empty</span><span class="p">:</span>
+            <span class="n">headers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">df_temp</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="n">df_temp</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+            <span class="n">empty</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">df_temp</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2022, Jackson Michuda, Abby Pandya, Vinodh Rajapakse, Joseph Wakim.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> and ❤️  using a custom <a href="https://github.com/LinxiFan/Sphinx-theme">theme</a> based on <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="../../_static/language_data.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="../../None"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

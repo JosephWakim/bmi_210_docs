@@ -1,0 +1,419 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>src.load_CIViC_data &mdash; UniOnco  documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="UniOnco  documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> UniOnco
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <p class="caption"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../abstract.html">Abstract</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background.html">Background</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Demos</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../CIViC_API_Usage.html">CIViC API Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cBioPortal_API_Usage.html">cBioPortal API Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../query_therapy_regimen.html">Query Ontology</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../references.html">References</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">UniOnco</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>src.load_CIViC_data</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for src.load_CIViC_data</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Command line tool for loading CIViC data.</span>
+
+<span class="sd">USAGE: python load_CIViC_data.py &lt;GENE_TABLE_PATH&gt; &lt;OUT_PATH&gt;</span>
+
+<span class="sd">Corresponding Author:   Joseph Wakim</span>
+<span class="sd">Affiliation:            Stanford</span>
+<span class="sd">Date:                   March 1, 2022</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Optional</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">import</span> <span class="nn">api_tools</span> <span class="k">as</span> <span class="nn">apit</span>
+
+
+<div class="viewcode-block" id="save_df"><a class="viewcode-back" href="../../modules.html#src.load_CIViC_data.save_df">[docs]</a><span class="k">def</span> <span class="nf">save_df</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">save_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Save table to CSV file if a `save_path` is provided.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df : pd.DataFrame</span>
+<span class="sd">        Table to save to CSV file</span>
+<span class="sd">    save_path : Optional[str]</span>
+<span class="sd">        Path at which to save data from API endpoint, relative to current</span>
+<span class="sd">        working directory (default = None); if None, table is not saved</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">save_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">save_path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="load_data_from_civic_endpoint"><a class="viewcode-back" href="../../modules.html#src.load_CIViC_data.load_data_from_civic_endpoint">[docs]</a><span class="k">def</span> <span class="nf">load_data_from_civic_endpoint</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">save_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Load/save data from API endpoint as a csv file</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    url : str</span>
+<span class="sd">        URL to the API endpoint for plotting</span>
+<span class="sd">    save_path : Optional[str]</span>
+<span class="sd">        Path at which to save data from API endpoint, relative to current</span>
+<span class="sd">        working directory (default = None); if None, table is not saved</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        Table containing data from API endpoint</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">apit</span><span class="o">.</span><span class="n">Endpoint</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">data_as_pandas</span><span class="p">(</span><span class="s2">&quot;records&quot;</span><span class="p">)</span>
+    <span class="n">save_df</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">save_path</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">df</span></div>
+
+
+<div class="viewcode-block" id="filter_civic_evidence_items"><a class="viewcode-back" href="../../modules.html#src.load_CIViC_data.filter_civic_evidence_items">[docs]</a><span class="k">def</span> <span class="nf">filter_civic_evidence_items</span><span class="p">(</span><span class="n">df_evidence</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Filter records in CIViC evidence items table.</span>
+
+<span class="sd">    Include only &quot;Predictive&quot; evidence type, &quot;Supports&quot; evidence direction. Drop</span>
+<span class="sd">    all records with &quot;N/A&quot; clinical significance.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df_evidence : pd.DataFrame</span>
+<span class="sd">        Table of evidence items loaded from CIViC database.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        Filtered table from CIViC database</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df_evidence</span> <span class="o">=</span> \
+        <span class="n">df_evidence</span><span class="p">[</span><span class="n">df_evidence</span><span class="p">[</span><span class="s2">&quot;evidence_type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Predictive&quot;</span><span class="p">]</span>
+    <span class="n">df_evidence</span> <span class="o">=</span> \
+        <span class="n">df_evidence</span><span class="p">[</span><span class="n">df_evidence</span><span class="p">[</span><span class="s2">&quot;evidence_direction&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Supports&quot;</span><span class="p">]</span>
+    <span class="n">df_evidence</span> <span class="o">=</span> \
+        <span class="n">df_evidence</span><span class="p">[</span><span class="n">df_evidence</span><span class="p">[</span><span class="s2">&quot;clinical_significance&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;N/A&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">df_evidence</span></div>
+
+
+<div class="viewcode-block" id="merge_gene_names"><a class="viewcode-back" href="../../modules.html#src.load_CIViC_data.merge_gene_names">[docs]</a><span class="k">def</span> <span class="nf">merge_gene_names</span><span class="p">(</span>
+    <span class="n">df_variant_evidence</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">gene_path</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Merge gene names into table of variants and evidence items.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df_variant_evidence : pd.DataFrame</span>
+<span class="sd">        Table of variants and associated therapy regimens, labeled by evidence</span>
+<span class="sd">        level</span>
+<span class="sd">    gene_path : str</span>
+<span class="sd">        Path to TSV file containing key cancer genes and their associated</span>
+<span class="sd">        entrez_id values</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        Table of variants and associated therapy regimens, labeled by evidence</span>
+<span class="sd">        level and with gene names</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df_gene</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">gene_path</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="n">df_joined</span> <span class="o">=</span> <span class="n">df_variant_evidence</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+        <span class="n">df_gene</span><span class="p">,</span> <span class="n">left_on</span><span class="o">=</span><span class="s2">&quot;entrez_id&quot;</span><span class="p">,</span> <span class="n">right_on</span><span class="o">=</span><span class="s2">&quot;Entrez_Id&quot;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span>
+    <span class="p">)</span>
+    <span class="n">df_joined</span> <span class="o">=</span> <span class="n">df_joined</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Entrez_Id&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">df_joined</span></div>
+
+
+<div class="viewcode-block" id="merge_civic_variant_evidence"><a class="viewcode-back" href="../../modules.html#src.load_CIViC_data.merge_civic_variant_evidence">[docs]</a><span class="k">def</span> <span class="nf">merge_civic_variant_evidence</span><span class="p">(</span>
+    <span class="n">df_variant</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">df_evidence</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">gene_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">save_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Merge variant and evidence data from CIViC.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Saves only columns relevant to our ontology.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df_variant : pd.DataFrame</span>
+<span class="sd">        Table of variants from CIViC database</span>
+<span class="sd">    df_evidence : pd.DataFrame</span>
+<span class="sd">        Filtered table of evidence items from CIViC database</span>
+<span class="sd">    gene_path : str</span>
+<span class="sd">        Path to TSV file containing key cancer genes and their associated</span>
+<span class="sd">        entrez_id values</span>
+<span class="sd">    save_path : Optional[str]</span>
+<span class="sd">        Path at which to save joined variant/evidence item table (default =</span>
+<span class="sd">        None); if None, table is not saved</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        Table of combined variant and evidence data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df_joined</span> <span class="o">=</span> <span class="n">df_evidence</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+        <span class="n">df_variant</span><span class="p">,</span> <span class="n">left_on</span><span class="o">=</span><span class="s2">&quot;variant_id&quot;</span><span class="p">,</span> <span class="n">right_on</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span>
+    <span class="p">)</span>
+    <span class="n">columns_of_interest</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;name_y&quot;</span><span class="p">,</span> <span class="s2">&quot;drugs&quot;</span><span class="p">,</span> <span class="s2">&quot;evidence_level&quot;</span><span class="p">,</span> <span class="s2">&quot;clinical_significance&quot;</span><span class="p">,</span> <span class="s2">&quot;disease&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;entrez_id&quot;</span>
+    <span class="p">]</span>
+    <span class="n">df_joined</span> <span class="o">=</span> <span class="n">df_joined</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">columns_of_interest</span><span class="p">]</span>
+    <span class="n">df_joined</span> <span class="o">=</span> <span class="n">merge_gene_names</span><span class="p">(</span><span class="n">df_joined</span><span class="p">,</span> <span class="n">gene_path</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">df_joined</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">drug_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">drug</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">drug</span> <span class="ow">in</span> <span class="n">df_joined</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;drugs&quot;</span><span class="p">]]</span>
+        <span class="n">therapy_regimen</span> <span class="o">=</span> <span class="s2">&quot;+&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">drug_list</span><span class="p">)</span>
+        <span class="n">df_joined</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;therapy_regimen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">therapy_regimen</span>
+        <span class="n">df_joined</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;disease&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_joined</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;disease&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+
+    <span class="n">df_joined</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;drugs&quot;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">column_mappings</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;name_y&quot;</span><span class="p">:</span> <span class="s2">&quot;variant&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;therapy_regimen&quot;</span><span class="p">:</span> <span class="s2">&quot;TherapyRegimen&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;evidence_level&quot;</span><span class="p">:</span> <span class="s2">&quot;EvidenceLevel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;clinical_significance&quot;</span><span class="p">:</span> <span class="s2">&quot;ClinicalSignificance&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;disease&quot;</span><span class="p">:</span> <span class="s2">&quot;Disease&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Gene_Symbol&quot;</span><span class="p">:</span> <span class="s2">&quot;Gene&quot;</span>
+    <span class="p">}</span>
+    <span class="n">df_joined</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">column_mappings</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">save_df</span><span class="p">(</span><span class="n">df_joined</span><span class="p">,</span> <span class="n">save_path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../modules.html#src.load_CIViC_data.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">gene_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">save_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Load variant and evidence item data from CIViC and save table to CSV.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    save_path : Optional[str]</span>
+<span class="sd">        Path at which to save joined variant/evidence item table (default =</span>
+<span class="sd">        None); if None, table is not saved</span>
+<span class="sd">    gene_path : str</span>
+<span class="sd">        Path to TSV file containing key cancer genes and their associated</span>
+<span class="sd">        entrez_id values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">variant_api_url</span> <span class="o">=</span> <span class="s2">&quot;https://civicdb.org/api/variants?count=3056&quot;</span>
+    <span class="n">evidence_item_api_url</span> <span class="o">=</span> <span class="s2">&quot;https://civicdb.org/api/evidence_items?count=8579&quot;</span>
+
+    <span class="n">df_variant</span> <span class="o">=</span> <span class="n">load_data_from_civic_endpoint</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">variant_api_url</span><span class="p">)</span>
+    <span class="n">df_evidence</span> <span class="o">=</span> <span class="n">filter_civic_evidence_items</span><span class="p">(</span>
+        <span class="n">load_data_from_civic_endpoint</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">evidence_item_api_url</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">merge_civic_variant_evidence</span><span class="p">(</span><span class="n">df_variant</span><span class="p">,</span> <span class="n">df_evidence</span><span class="p">,</span> <span class="n">gene_path</span><span class="p">,</span> <span class="n">save_path</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Load data from CIViC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">main</span><span class="p">(</span><span class="n">gene_path</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">save_path</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2022, Jackson Michuda, Abby Pandya, Vinodh Rajapakse, Joseph Wakim.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> and ❤️  using a custom <a href="https://github.com/LinxiFan/Sphinx-theme">theme</a> based on <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="../../_static/language_data.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="../../None"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

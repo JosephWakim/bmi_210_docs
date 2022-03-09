@@ -1,0 +1,472 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>src.api_tools &mdash; UniOnco  documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="UniOnco  documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> UniOnco
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <p class="caption"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../abstract.html">Abstract</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background.html">Background</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Demos</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../CIViC_API_Usage.html">CIViC API Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cBioPortal_API_Usage.html">cBioPortal API Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../query_therapy_regimen.html">Query Ontology</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../references.html">References</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">UniOnco</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>src.api_tools</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for src.api_tools</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Tools for accessing API clients using Swagger.</span>
+
+<span class="sd">Corresponding Author:   Joseph Wakim</span>
+<span class="sd">Affiliation:            Stanford University</span>
+<span class="sd">Date:                   February 26, 2022</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">bravado.client</span> <span class="k">import</span> <span class="n">SwaggerClient</span>
+
+
+<div class="viewcode-block" id="Endpoint"><a class="viewcode-back" href="../../modules.html#src.api_tools.Endpoint">[docs]</a><span class="k">class</span> <span class="nc">Endpoint</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Interface with API endpoint using Python.</span>
+
+<span class="sd">    Serves as a wrapper for methods in `requests` package.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the object representation of the API endpoint.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        url : str</span>
+<span class="sd">            URL to the API endpoint</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">requests_obj</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">requests_obj</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">404</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The specified API endpoint url was not found.&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">headers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_headers</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Endpoint.get_headers"><a class="viewcode-back" href="../../modules.html#src.api_tools.Endpoint.get_headers">[docs]</a>    <span class="k">def</span> <span class="nf">get_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return headers of the API endpoint.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            Headers at the API endpoint</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">requests_obj</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="Endpoint.check_header"><a class="viewcode-back" href="../../modules.html#src.api_tools.Endpoint.check_header">[docs]</a>    <span class="k">def</span> <span class="nf">check_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check that a requested header exists in the API endpoint.</span>
+
+<span class="sd">         Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        header : str</span>
+<span class="sd">            Name of the header to check</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">header</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;The header `</span><span class="si">{header}</span><span class="s2">` was not found.&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Endpoint.access_data_at_header"><a class="viewcode-back" href="../../modules.html#src.api_tools.Endpoint.access_data_at_header">[docs]</a>    <span class="k">def</span> <span class="nf">access_data_at_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Access data at the API endpoint under a specified header.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        header : str</span>
+<span class="sd">            Name of the header to access</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        List[dict]</span>
+<span class="sd">            The data associated with the endpoint under the specified header,</span>
+<span class="sd">            which takes the form of a list of dictionaries</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_header</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">requests_obj</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="n">header</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Endpoint.data_as_pandas"><a class="viewcode-back" href="../../modules.html#src.api_tools.Endpoint.data_as_pandas">[docs]</a>    <span class="k">def</span> <span class="nf">data_as_pandas</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">headers</span><span class="p">:</span> <span class="nb">str</span> <span class="ow">or</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">search_keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">search_vals</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Tabulate data at specified level of endpoint&#39;s JSON data structure.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The JSON data structure returned from the GET call to the API Endpoint</span>
+<span class="sd">        is represented by a list of dictionaries. Each dictionary in this list</span>
+<span class="sd">        can have a key whose corresponding value is also a list of dictionaries.</span>
+<span class="sd">        This nested &quot;list-of-dicts&quot; format makes it difficult to parse our data.</span>
+
+<span class="sd">        This method locates one of the nested lists-of-dicts and returns its</span>
+<span class="sd">        values as a pandas DataFrame. To do this, the user must specify an</span>
+<span class="sd">        ordered sequence of `headers`, each of which corresponds to a key whose</span>
+<span class="sd">        value is a list of dictionaries.</span>
+
+<span class="sd">        Each time a header is located, a list of dictionaries (all of which have</span>
+<span class="sd">        common keys) is identified. We may be interested in a dictionary in this</span>
+<span class="sd">        list which has a key whose value is also a list-of-dicts (hense the</span>
+<span class="sd">        nested list-of-dicts pattern). The `search_keys` and `search_vals`</span>
+<span class="sd">        arguments represent ordered sequences of keys and corrresponding values</span>
+<span class="sd">        with which we locate the next-layer list-of-dicts that we are interested</span>
+<span class="sd">        in tabulating.</span>
+
+<span class="sd">        Pseudocode</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dict = JSON data from API endpoint as list-of-dicts</span>
+<span class="sd">        for i in range(number_of_headers):</span>
+<span class="sd">            list_of_dicts = dict[headers[i]]</span>
+<span class="sd">            if i == number_of_headers - 1:</span>
+<span class="sd">                return tabular representation of list_of_dicts</span>
+<span class="sd">            else:</span>
+<span class="sd">                for row in list-of-dict:</span>
+<span class="sd">                    if row[search_keys[i]] == search_values[i]:</span>
+<span class="sd">                    dict = row</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        headers : str or Sequence[str]</span>
+<span class="sd">            Sequence of nested headers pointing to data for tabulation, in the</span>
+<span class="sd">            order by which they appear in the JSON data structure; if entered</span>
+<span class="sd">            as a string, then the list of dictionaries for that string is</span>
+<span class="sd">            returned as a data frame.</span>
+<span class="sd">        search_keys : Optional[Sequence[str]]</span>
+<span class="sd">            Sequence of keys on which to search for a specific dictionary in a</span>
+<span class="sd">            list of dictionaries (default = [])</span>
+<span class="sd">        search_vals : Optional[Sequence[str]]</span>
+<span class="sd">            Sequence of values for respective search key on which  to isolate a</span>
+<span class="sd">            specific dictionary in a list of dictionaries (default = [])</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pd.DataFrame</span>
+<span class="sd">            Table representing data at some position of the endpoint.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">list_of_dicts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_data_at_header</span><span class="p">(</span><span class="n">headers</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">n_headers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">headers</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">n_headers</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+            <span class="n">list_of_dicts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_data_at_header</span><span class="p">(</span><span class="n">headers</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_headers</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">list_of_dicts</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="n">search_keys</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">==</span> <span class="n">search_vals</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                        <span class="n">list_of_dicts</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="n">headers</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]]</span>
+                        <span class="k">break</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_of_dicts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;No data stored at endpoint header sequence.&quot;</span><span class="p">)</span>
+
+        <span class="n">keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">list_of_dicts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">list_dict_to_pandas</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">list_of_dicts</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="list_dict_to_pandas"><a class="viewcode-back" href="../../modules.html#src.api_tools.list_dict_to_pandas">[docs]</a><span class="k">def</span> <span class="nf">list_dict_to_pandas</span><span class="p">(</span>
+        <span class="n">keys</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">dictionaries</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Return pandas DataFrame representation of a list of dictionaries.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    All dictionaries should represent a single record and should have a common</span>
+<span class="sd">    set of keys. The dictionaries represent JSON-formatted structures. This</span>
+<span class="sd">    function is relevant for representing data at an API endpoint as a pandas</span>
+<span class="sd">    DataFrame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    keys : List[str]</span>
+<span class="sd">        List of keys common to each dicitonary in `dictionaries`</span>
+<span class="sd">    dictionaries : dict</span>
+<span class="sd">        List of dictionaries representing individual records to be tabulated</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">records</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="n">key</span><span class="p">:</span> <span class="n">dictionary</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span>
+        <span class="p">}</span> <span class="k">for</span> <span class="n">dictionary</span> <span class="ow">in</span> <span class="n">dictionaries</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_records</span><span class="p">(</span><span class="n">records</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_swagger_api_client"><a class="viewcode-back" href="../../modules.html#src.api_tools.get_swagger_api_client">[docs]</a><span class="k">def</span> <span class="nf">get_swagger_api_client</span><span class="p">(</span>
+        <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">val_requests</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">val_responses</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">val_swagger_spec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SwaggerClient</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Generate a Swagger client for the API from a URL.</span>
+
+<span class="sd">    This function wraps the `bravo.client.SwaggerClient.from_url` for</span>
+<span class="sd">    our particular use case.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    url : str</span>
+<span class="sd">        Path to the API endpoint</span>
+<span class="sd">    val_requests : Optional[bool]</span>
+<span class="sd">        Check if requests sent to the REST API meet validation rules</span>
+<span class="sd">        set forth by the API (default = False)</span>
+<span class="sd">    val_responses : Optional[bool]</span>
+<span class="sd">        Check if responses obtained from the REST API meet validation</span>
+<span class="sd">        rules set forth by the API (default = False)</span>
+<span class="sd">    val_swagger_spec : Optional[bool]</span>
+<span class="sd">        Check if the responses obtained from the REST API match the</span>
+<span class="sd">        schema (or other structure) defined in the metadata of the API</span>
+<span class="sd">        (default = False)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    SwaggerClient</span>
+<span class="sd">        Swagger client object for the specified API</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">SwaggerClient</span><span class="o">.</span><span class="n">from_url</span><span class="p">(</span>
+        <span class="n">spec_url</span> <span class="o">=</span> <span class="n">url</span><span class="p">,</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;validate_requests&quot;</span><span class="p">:</span> <span class="n">val_requests</span><span class="p">,</span>
+            <span class="s2">&quot;validate_responses&quot;</span><span class="p">:</span> <span class="n">val_responses</span><span class="p">,</span>
+            <span class="s2">&quot;validate_swagger_spec&quot;</span><span class="p">:</span> <span class="n">val_swagger_spec</span>
+        <span class="p">}</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="swagger_endpoint_data_to_df"><a class="viewcode-back" href="../../modules.html#src.api_tools.swagger_endpoint_data_to_df">[docs]</a><span class="k">def</span> <span class="nf">swagger_endpoint_data_to_df</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Mapping</span><span class="p">],</span>
+        <span class="n">headers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Load results from cBioPortal API endpoints to pandas DataFrame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : List[Mapping]</span>
+<span class="sd">        List of dictionaries at an endpoint of the API</span>
+<span class="sd">    headers : Optional[List[str]]</span>
+<span class="sd">        Headers of the data contained at the endpoint; if None, headers are read</span>
+<span class="sd">        from the first endpoint in the list</span>
+
+<span class="sd">    returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        Table representation of data at endpoint</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">headers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="nb">dir</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">list_dict_to_pandas</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2022, Jackson Michuda, Abby Pandya, Vinodh Rajapakse, Joseph Wakim.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> and ❤️  using a custom <a href="https://github.com/LinxiFan/Sphinx-theme">theme</a> based on <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="../../_static/language_data.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="../../None"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

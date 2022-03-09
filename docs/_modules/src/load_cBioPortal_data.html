@@ -1,0 +1,305 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>src.load_cBioPortal_data &mdash; UniOnco  documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="UniOnco  documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> UniOnco
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <p class="caption"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../abstract.html">Abstract</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background.html">Background</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Demos</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../CIViC_API_Usage.html">CIViC API Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cBioPortal_API_Usage.html">cBioPortal API Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../query_therapy_regimen.html">Query Ontology</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../references.html">References</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">UniOnco</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>src.load_cBioPortal_data</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for src.load_cBioPortal_data</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Load patient variant data from cBioPortal.</span>
+
+<span class="sd">USAGE: python load_cBioPortal_data.py &lt;SAVE_PATH&gt; &lt;OPTIONAL_CANCER_GENE_PATH&gt;</span>
+
+<span class="sd">Corresponding Author:   Joseph Wakim</span>
+<span class="sd">Affiliation:            Stanford</span>
+<span class="sd">Date:                   March 1, 2022</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Optional</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">bravado.client</span> <span class="k">import</span> <span class="n">SwaggerClient</span>
+
+<span class="kn">import</span> <span class="nn">api_tools</span> <span class="k">as</span> <span class="nn">apit</span>
+<span class="kn">import</span> <span class="nn">access_cBioPortal</span> <span class="k">as</span> <span class="nn">cbio</span>
+
+
+<div class="viewcode-block" id="load_mutations"><a class="viewcode-back" href="../../modules.html#src.load_cBioPortal_data.load_mutations">[docs]</a><span class="k">def</span> <span class="nf">load_mutations</span><span class="p">(</span>
+    <span class="n">client</span><span class="p">:</span> <span class="n">SwaggerClient</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">save_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">gene_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Load patient mutation data from cBioPortal.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    client : SwaggerClient</span>
+<span class="sd">        Swagger API client accessing cBioPortal</span>
+<span class="sd">    save_path : str</span>
+<span class="sd">        Path at which to save table of mutation data</span>
+<span class="sd">    gene_path : Optional[str]</span>
+<span class="sd">        Path to TSV file containing gene set (name in column 0, entrez gene ID</span>
+<span class="sd">        in column 1) to which mutation data will be filtered (default = None);</span>
+<span class="sd">        if None, mutation data will not be filtered and all variants will be</span>
+<span class="sd">        maintained</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">gene_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">risk_genes</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">gene_path</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">gene_list</span> <span class="o">=</span> <span class="n">risk_genes</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">gene_list</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">cbio</span><span class="o">.</span><span class="n">get_all_from_bioportal_endpoint</span><span class="p">(</span>
+        <span class="n">client</span><span class="p">,</span> <span class="s2">&quot;Mutations&quot;</span><span class="p">,</span> <span class="n">out_path</span><span class="o">=</span><span class="n">save_path</span><span class="p">,</span> <span class="n">gene_list</span><span class="o">=</span><span class="n">gene_list</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../modules.html#src.load_cBioPortal_data.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">save_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">gene_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Save patient mutation data from cBioPortal.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    save_path : str</span>
+<span class="sd">        Path at which to save table of mutation data</span>
+<span class="sd">    gene_path : Optional[str]</span>
+<span class="sd">        Path to TSV file containing gene set (name in column 0, entrez gene ID</span>
+<span class="sd">        in column 1) to which mutation data will be filtered (default = None);</span>
+<span class="sd">        if None, mutation data will not be filtered and all variants will be</span>
+<span class="sd">        maintained</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cBioPortal_api_url</span> <span class="o">=</span> <span class="s2">&quot;https://www.cbioportal.org/api/api-docs&quot;</span>
+    <span class="n">client</span> <span class="o">=</span> <span class="n">apit</span><span class="o">.</span><span class="n">get_swagger_api_client</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">cBioPortal_api_url</span><span class="p">)</span>
+    <span class="n">load_mutations</span><span class="p">(</span><span class="n">client</span><span class="o">=</span><span class="n">client</span><span class="p">,</span> <span class="n">save_path</span><span class="o">=</span><span class="n">save_path</span><span class="p">,</span> <span class="n">gene_path</span><span class="o">=</span><span class="n">gene_path</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">sys_args</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys_args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">main</span><span class="p">(</span><span class="n">save_path</span><span class="o">=</span><span class="n">sys_args</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys_args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">main</span><span class="p">(</span><span class="n">save_path</span><span class="o">=</span><span class="n">sys_args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">gene_path</span><span class="o">=</span><span class="n">sys_args</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Please specify an output path at which to save mutation data. &quot;</span>
+            <span class="s2">&quot;Optionally, you may also specify a path to a gene list to include.&quot;</span>
+        <span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2022, Jackson Michuda, Abby Pandya, Vinodh Rajapakse, Joseph Wakim.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> and ❤️  using a custom <a href="https://github.com/LinxiFan/Sphinx-theme">theme</a> based on <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="../../_static/language_data.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="../../None"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

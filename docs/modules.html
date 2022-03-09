@@ -95,11 +95,11 @@
 <p class="caption"><span class="caption-text">Additional Resources</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Modules</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#general-api-tools">General API Tools</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#cbioportal-specific-api-tools">cBioPortal-specific API Tools</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#loading-data-from-online-data-sources">Loading Data from Online Data Sources</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#sampling-a-subset-of-patients-in-cbioportal">Sampling a Subset of Patients in cBioPortal</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#querying-our-ontology">Querying Our Ontology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-src.api_tools">General API Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-src.access_cBioPortal">cBioPortal-specific API Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-src.load_cBioPortal_data">Loading Data from Online Data Sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-src.sample_patients">Sampling a Subset of Patients in cBioPortal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-src.query_therapy_regimen">Querying Our Ontology</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="references.html">References</a></li>
@@ -168,20 +168,677 @@
             
   <div class="section" id="modules">
 <h1>Modules<a class="headerlink" href="#modules" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="general-api-tools">
-<h2>General API Tools<a class="headerlink" href="#general-api-tools" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-src.api_tools">
+<span id="general-api-tools"></span><h2>General API Tools<a class="headerlink" href="#module-src.api_tools" title="Permalink to this headline">¶</a></h2>
+<p>Tools for accessing API clients using Swagger.</p>
+<p>Corresponding Author:   Joseph Wakim
+Affiliation:            Stanford University
+Date:                   February 26, 2022</p>
+<dl class="class">
+<dt id="src.api_tools.Endpoint">
+<em class="property">class </em><code class="sig-prename descclassname">src.api_tools.</code><code class="sig-name descname">Endpoint</code><span class="sig-paren">(</span><em class="sig-param">url: str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/api_tools.html#Endpoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.api_tools.Endpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Interface with API endpoint using Python.</p>
+<p>Serves as a wrapper for methods in <cite>requests</cite> package.</p>
+<dl class="method">
+<dt id="src.api_tools.Endpoint.access_data_at_header">
+<code class="sig-name descname">access_data_at_header</code><span class="sig-paren">(</span><em class="sig-param">header: str</em><span class="sig-paren">)</span> &#x2192; List[dict]<a class="reference internal" href="_modules/src/api_tools.html#Endpoint.access_data_at_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.api_tools.Endpoint.access_data_at_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Access data at the API endpoint under a specified header.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>header</strong> (<em>str</em>) – Name of the header to access</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The data associated with the endpoint under the specified header,
+which takes the form of a list of dictionaries</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.api_tools.Endpoint.check_header">
+<code class="sig-name descname">check_header</code><span class="sig-paren">(</span><em class="sig-param">header: str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/api_tools.html#Endpoint.check_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.api_tools.Endpoint.check_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that a requested header exists in the API endpoint.</p>
+<blockquote>
+<div><p>Parameters</p>
+</div></blockquote>
+<dl class="simple">
+<dt>header<span class="classifier">str</span></dt><dd><p>Name of the header to check</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.api_tools.Endpoint.data_as_pandas">
+<code class="sig-name descname">data_as_pandas</code><span class="sig-paren">(</span><em class="sig-param">headers: str</em>, <em class="sig-param">search_keys: Optional[Sequence[str]] = []</em>, <em class="sig-param">search_vals: Optional[Sequence[str]] = []</em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="_modules/src/api_tools.html#Endpoint.data_as_pandas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.api_tools.Endpoint.data_as_pandas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tabulate data at specified level of endpoint’s JSON data structure.</p>
+<p class="rubric">Notes</p>
+<p>The JSON data structure returned from the GET call to the API Endpoint
+is represented by a list of dictionaries. Each dictionary in this list
+can have a key whose corresponding value is also a list of dictionaries.
+This nested “list-of-dicts” format makes it difficult to parse our data.</p>
+<p>This method locates one of the nested lists-of-dicts and returns its
+values as a pandas DataFrame. To do this, the user must specify an
+ordered sequence of <cite>headers</cite>, each of which corresponds to a key whose
+value is a list of dictionaries.</p>
+<p>Each time a header is located, a list of dictionaries (all of which have
+common keys) is identified. We may be interested in a dictionary in this
+list which has a key whose value is also a list-of-dicts (hense the
+nested list-of-dicts pattern). The <cite>search_keys</cite> and <cite>search_vals</cite>
+arguments represent ordered sequences of keys and corrresponding values
+with which we locate the next-layer list-of-dicts that we are interested
+in tabulating.</p>
+<p>dict = JSON data from API endpoint as list-of-dicts
+for i in range(number_of_headers):</p>
+<blockquote>
+<div><p>list_of_dicts = dict[headers[i]]
+if i == number_of_headers - 1:</p>
+<blockquote>
+<div><p>return tabular representation of list_of_dicts</p>
+</div></blockquote>
+<dl class="simple">
+<dt>else:</dt><dd><dl class="simple">
+<dt>for row in list-of-dict:</dt><dd><p>if row[search_keys[i]] == search_values[i]:
+dict = row</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>headers</strong> (<em>str</em><em> or </em><em>Sequence</em><em>[</em><em>str</em><em>]</em>) – Sequence of nested headers pointing to data for tabulation, in the
+order by which they appear in the JSON data structure; if entered
+as a string, then the list of dictionaries for that string is
+returned as a data frame.</p></li>
+<li><p><strong>search_keys</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Sequence of keys on which to search for a specific dictionary in a
+list of dictionaries (default = [])</p></li>
+<li><p><strong>search_vals</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Sequence of values for respective search key on which  to isolate a
+specific dictionary in a list of dictionaries (default = [])</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Table representing data at some position of the endpoint.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.api_tools.Endpoint.get_headers">
+<code class="sig-name descname">get_headers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/api_tools.html#Endpoint.get_headers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.api_tools.Endpoint.get_headers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return headers of the API endpoint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Headers at the API endpoint</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="src.api_tools.get_swagger_api_client">
+<code class="sig-prename descclassname">src.api_tools.</code><code class="sig-name descname">get_swagger_api_client</code><span class="sig-paren">(</span><em class="sig-param">url: str</em>, <em class="sig-param">*</em>, <em class="sig-param">val_requests: Optional[bool] = False</em>, <em class="sig-param">val_responses: Optional[bool] = False</em>, <em class="sig-param">val_swagger_spec: Optional[bool] = False</em><span class="sig-paren">)</span> &#x2192; bravado.client.SwaggerClient<a class="reference internal" href="_modules/src/api_tools.html#get_swagger_api_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.api_tools.get_swagger_api_client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a Swagger client for the API from a URL.</p>
+<p>This function wraps the <cite>bravo.client.SwaggerClient.from_url</cite> for
+our particular use case.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>url</strong> (<em>str</em>) – Path to the API endpoint</p></li>
+<li><p><strong>val_requests</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – Check if requests sent to the REST API meet validation rules
+set forth by the API (default = False)</p></li>
+<li><p><strong>val_responses</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – Check if responses obtained from the REST API meet validation
+rules set forth by the API (default = False)</p></li>
+<li><p><strong>val_swagger_spec</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – Check if the responses obtained from the REST API match the
+schema (or other structure) defined in the metadata of the API
+(default = False)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Swagger client object for the specified API</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>SwaggerClient</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.api_tools.list_dict_to_pandas">
+<code class="sig-prename descclassname">src.api_tools.</code><code class="sig-name descname">list_dict_to_pandas</code><span class="sig-paren">(</span><em class="sig-param">keys: List[str], dictionaries: List[dict]</em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="_modules/src/api_tools.html#list_dict_to_pandas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.api_tools.list_dict_to_pandas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return pandas DataFrame representation of a list of dictionaries.</p>
+<p class="rubric">Notes</p>
+<p>All dictionaries should represent a single record and should have a common
+set of keys. The dictionaries represent JSON-formatted structures. This
+function is relevant for representing data at an API endpoint as a pandas
+DataFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>keys</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – List of keys common to each dicitonary in <cite>dictionaries</cite></p></li>
+<li><p><strong>dictionaries</strong> (<em>dict</em>) – List of dictionaries representing individual records to be tabulated</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.api_tools.swagger_endpoint_data_to_df">
+<code class="sig-prename descclassname">src.api_tools.</code><code class="sig-name descname">swagger_endpoint_data_to_df</code><span class="sig-paren">(</span><em class="sig-param">data: List[Mapping], headers: Optional[List[str]] = None</em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="_modules/src/api_tools.html#swagger_endpoint_data_to_df"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.api_tools.swagger_endpoint_data_to_df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load results from cBioPortal API endpoints to pandas DataFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>List</em><em>[</em><em>Mapping</em><em>]</em>) – List of dictionaries at an endpoint of the API</p></li>
+<li><p><strong>headers</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Headers of the data contained at the endpoint; if None, headers are read
+from the first endpoint in the list</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Table representation of data at endpoint</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
-<div class="section" id="cbioportal-specific-api-tools">
-<h2>cBioPortal-specific API Tools<a class="headerlink" href="#cbioportal-specific-api-tools" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-src.access_cBioPortal">
+<span id="cbioportal-specific-api-tools"></span><h2>cBioPortal-specific API Tools<a class="headerlink" href="#module-src.access_cBioPortal" title="Permalink to this headline">¶</a></h2>
+<p>Access cBioPortal in a format compatible with Snakefile.</p>
+<p>This module accesses tools in cBioPortal in a format that works with our
+pipeline for automatic ontology generation.</p>
+<p>Corresponding Author:   Joseph Wakim
+Affiliation:            Stanford
+Date:                   February 27, 2022</p>
+<dl class="function">
+<dt id="src.access_cBioPortal.get_all_from_bioportal_endpoint">
+<code class="sig-prename descclassname">src.access_cBioPortal.</code><code class="sig-name descname">get_all_from_bioportal_endpoint</code><span class="sig-paren">(</span><em class="sig-param">client: bravado.client.SwaggerClient</em>, <em class="sig-param">endpoint: str</em>, <em class="sig-param">out_path: Optional[str] = None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="_modules/src/access_cBioPortal.html#get_all_from_bioportal_endpoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.access_cBioPortal.get_all_from_bioportal_endpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load all data from an endpoint of cBioPortal</p>
+<p>Wrapper for cBioPortal convenience functions. Returns a Pandas DataFrame,
+which we can use to populate our ontology.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>client</strong> (<em>SwaggerClient</em>) – Swagger client accessing the cBioPortal database</p></li>
+<li><p><strong>endpoint</strong> (<em>str</em>) – Name of the cBioPortal endpoint from which to load data</p></li>
+<li><p><strong>out_path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Path relative to current working directory at which to save output of
+mutations data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Table of data at specified endpoint.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.access_cBioPortal.get_all_samples">
+<code class="sig-prename descclassname">src.access_cBioPortal.</code><code class="sig-name descname">get_all_samples</code><span class="sig-paren">(</span><em class="sig-param">client: bravado.client.SwaggerClient</em>, <em class="sig-param">unique_study_ids: Optional[Sequence[str]] = None</em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="_modules/src/access_cBioPortal.html#get_all_samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.access_cBioPortal.get_all_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all samples from all studies.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>client</strong> (<em>SwaggerClient</em>) – Swagger client accessing the cBioPortal database</p></li>
+<li><p><strong>unique_study_ids</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>]</em>) – List of unique study IDs (default = None). If argument is not specified,
+then a list of all unique study IDs is determined.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Table of sample data</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.access_cBioPortal.get_mutations">
+<code class="sig-prename descclassname">src.access_cBioPortal.</code><code class="sig-name descname">get_mutations</code><span class="sig-paren">(</span><em class="sig-param">client: bravado.client.SwaggerClient</em>, <em class="sig-param">out_path: str</em>, <em class="sig-param">*</em>, <em class="sig-param">gene_list: Optional[Sequence[str]] = None</em>, <em class="sig-param">df_molecular_profiles: Optional[pandas.core.frame.DataFrame] = None</em>, <em class="sig-param">df_sample_lists: Optional[pandas.core.frame.DataFrame] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/access_cBioPortal.html#get_mutations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.access_cBioPortal.get_mutations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all mutations in cBioPortal corresponding to a gene in gene_list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>client</strong> (<em>SwaggerClient</em>) – Swagger client accessing the cBioPortal database</p></li>
+<li><p><strong>out_path</strong> (<em>str</em>) – Path relative to current working directory at which to save CSV file of
+variants</p></li>
+<li><p><strong>gene_list</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>]</em>) – List of genes to which variants will be filtered (default = None); if
+the argument is not specified, no variants will be filtered</p></li>
+<li><p><strong>df_molecular_profiles</strong> (<em>Optional</em><em>[</em><em>pd.DataFrame</em><em>]</em>) – Table of molecular profiles</p></li>
+<li><p><strong>df_sample_lists</strong> (<em>Optional</em><em>[</em><em>pd.DataFrame</em><em>]</em>) – Table of sample lists</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.access_cBioPortal.get_patient_cancer_types">
+<code class="sig-prename descclassname">src.access_cBioPortal.</code><code class="sig-name descname">get_patient_cancer_types</code><span class="sig-paren">(</span><em class="sig-param">client: bravado.client.SwaggerClient</em>, <em class="sig-param">unique_study_ids: Optional[Sequence[str]] = None</em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="_modules/src/access_cBioPortal.html#get_patient_cancer_types"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.access_cBioPortal.get_patient_cancer_types" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all samples from all studies.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>client</strong> (<em>SwaggerClient</em>) – Swagger client accessing the cBioPortal database</p></li>
+<li><p><strong>unique_study_ids</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>]</em>) – List of unique study IDs (default = None). If argument is not specified,
+then a list of all unique study IDs is determined.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Table of patient cancer types</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.access_cBioPortal.get_unique_study_ids">
+<code class="sig-prename descclassname">src.access_cBioPortal.</code><code class="sig-name descname">get_unique_study_ids</code><span class="sig-paren">(</span><em class="sig-param">client: bravado.client.SwaggerClient</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/access_cBioPortal.html#get_unique_study_ids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.access_cBioPortal.get_unique_study_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get unique study IDs from cBioPortal</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>client</strong> (<em>SwaggerClient</em>) – Swagger Client accessing the  cBioPortal database</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Array of unique study IDs</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Sequence[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
-<div class="section" id="loading-data-from-online-data-sources">
-<h2>Loading Data from Online Data Sources<a class="headerlink" href="#loading-data-from-online-data-sources" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-src.load_cBioPortal_data">
+<span id="loading-data-from-online-data-sources"></span><h2>Loading Data from Online Data Sources<a class="headerlink" href="#module-src.load_cBioPortal_data" title="Permalink to this headline">¶</a></h2>
+<p>Load patient variant data from cBioPortal.</p>
+<p>USAGE: python load_cBioPortal_data.py &lt;SAVE_PATH&gt; &lt;OPTIONAL_CANCER_GENE_PATH&gt;</p>
+<p>Corresponding Author:   Joseph Wakim
+Affiliation:            Stanford
+Date:                   March 1, 2022</p>
+<dl class="function">
+<dt id="src.load_cBioPortal_data.load_mutations">
+<code class="sig-prename descclassname">src.load_cBioPortal_data.</code><code class="sig-name descname">load_mutations</code><span class="sig-paren">(</span><em class="sig-param">client: bravado.client.SwaggerClient</em>, <em class="sig-param">*</em>, <em class="sig-param">save_path: str</em>, <em class="sig-param">gene_path: Optional[str] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/load_cBioPortal_data.html#load_mutations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.load_cBioPortal_data.load_mutations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load patient mutation data from cBioPortal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>client</strong> (<em>SwaggerClient</em>) – Swagger API client accessing cBioPortal</p></li>
+<li><p><strong>save_path</strong> (<em>str</em>) – Path at which to save table of mutation data</p></li>
+<li><p><strong>gene_path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Path to TSV file containing gene set (name in column 0, entrez gene ID
+in column 1) to which mutation data will be filtered (default = None);
+if None, mutation data will not be filtered and all variants will be
+maintained</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.load_cBioPortal_data.main">
+<code class="sig-prename descclassname">src.load_cBioPortal_data.</code><code class="sig-name descname">main</code><span class="sig-paren">(</span><em class="sig-param">save_path: str</em>, <em class="sig-param">gene_path: Optional[str] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/load_cBioPortal_data.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.load_cBioPortal_data.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save patient mutation data from cBioPortal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>save_path</strong> (<em>str</em>) – Path at which to save table of mutation data</p></li>
+<li><p><strong>gene_path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Path to TSV file containing gene set (name in column 0, entrez gene ID
+in column 1) to which mutation data will be filtered (default = None);
+if None, mutation data will not be filtered and all variants will be
+maintained</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-src.load_CIViC_data"></span><p>Command line tool for loading CIViC data.</p>
+<p>USAGE: python load_CIViC_data.py &lt;GENE_TABLE_PATH&gt; &lt;OUT_PATH&gt;</p>
+<p>Corresponding Author:   Joseph Wakim
+Affiliation:            Stanford
+Date:                   March 1, 2022</p>
+<dl class="function">
+<dt id="src.load_CIViC_data.filter_civic_evidence_items">
+<code class="sig-prename descclassname">src.load_CIViC_data.</code><code class="sig-name descname">filter_civic_evidence_items</code><span class="sig-paren">(</span><em class="sig-param">df_evidence: pandas.core.frame.DataFrame</em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="_modules/src/load_CIViC_data.html#filter_civic_evidence_items"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.load_CIViC_data.filter_civic_evidence_items" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter records in CIViC evidence items table.</p>
+<p>Include only “Predictive” evidence type, “Supports” evidence direction. Drop
+all records with “N/A” clinical significance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>df_evidence</strong> (<em>pd.DataFrame</em>) – Table of evidence items loaded from CIViC database.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Filtered table from CIViC database</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.load_CIViC_data.load_data_from_civic_endpoint">
+<code class="sig-prename descclassname">src.load_CIViC_data.</code><code class="sig-name descname">load_data_from_civic_endpoint</code><span class="sig-paren">(</span><em class="sig-param">url: str</em>, <em class="sig-param">save_path: Optional[str] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/load_CIViC_data.html#load_data_from_civic_endpoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.load_CIViC_data.load_data_from_civic_endpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load/save data from API endpoint as a csv file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>url</strong> (<em>str</em>) – URL to the API endpoint for plotting</p></li>
+<li><p><strong>save_path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Path at which to save data from API endpoint, relative to current
+working directory (default = None); if None, table is not saved</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Table containing data from API endpoint</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.load_CIViC_data.main">
+<code class="sig-prename descclassname">src.load_CIViC_data.</code><code class="sig-name descname">main</code><span class="sig-paren">(</span><em class="sig-param">gene_path: str</em>, <em class="sig-param">save_path: Optional[str] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/load_CIViC_data.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.load_CIViC_data.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load variant and evidence item data from CIViC and save table to CSV.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>save_path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Path at which to save joined variant/evidence item table (default =
+None); if None, table is not saved</p></li>
+<li><p><strong>gene_path</strong> (<em>str</em>) – Path to TSV file containing key cancer genes and their associated
+entrez_id values</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.load_CIViC_data.merge_civic_variant_evidence">
+<code class="sig-prename descclassname">src.load_CIViC_data.</code><code class="sig-name descname">merge_civic_variant_evidence</code><span class="sig-paren">(</span><em class="sig-param">df_variant: pandas.core.frame.DataFrame</em>, <em class="sig-param">df_evidence: pandas.core.frame.DataFrame</em>, <em class="sig-param">gene_path: str</em>, <em class="sig-param">save_path: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="_modules/src/load_CIViC_data.html#merge_civic_variant_evidence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.load_CIViC_data.merge_civic_variant_evidence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merge variant and evidence data from CIViC.</p>
+<p class="rubric">Notes</p>
+<p>Saves only columns relevant to our ontology.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df_variant</strong> (<em>pd.DataFrame</em>) – Table of variants from CIViC database</p></li>
+<li><p><strong>df_evidence</strong> (<em>pd.DataFrame</em>) – Filtered table of evidence items from CIViC database</p></li>
+<li><p><strong>gene_path</strong> (<em>str</em>) – Path to TSV file containing key cancer genes and their associated
+entrez_id values</p></li>
+<li><p><strong>save_path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Path at which to save joined variant/evidence item table (default =
+None); if None, table is not saved</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Table of combined variant and evidence data</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.load_CIViC_data.merge_gene_names">
+<code class="sig-prename descclassname">src.load_CIViC_data.</code><code class="sig-name descname">merge_gene_names</code><span class="sig-paren">(</span><em class="sig-param">df_variant_evidence: pandas.core.frame.DataFrame</em>, <em class="sig-param">gene_path: str</em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="_modules/src/load_CIViC_data.html#merge_gene_names"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.load_CIViC_data.merge_gene_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merge gene names into table of variants and evidence items.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df_variant_evidence</strong> (<em>pd.DataFrame</em>) – Table of variants and associated therapy regimens, labeled by evidence
+level</p></li>
+<li><p><strong>gene_path</strong> (<em>str</em>) – Path to TSV file containing key cancer genes and their associated
+entrez_id values</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Table of variants and associated therapy regimens, labeled by evidence
+level and with gene names</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.load_CIViC_data.save_df">
+<code class="sig-prename descclassname">src.load_CIViC_data.</code><code class="sig-name descname">save_df</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">save_path: Optional[str] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/load_CIViC_data.html#save_df"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.load_CIViC_data.save_df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save table to CSV file if a <cite>save_path</cite> is provided.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pd.DataFrame</em>) – Table to save to CSV file</p></li>
+<li><p><strong>save_path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Path at which to save data from API endpoint, relative to current
+working directory (default = None); if None, table is not saved</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
-<div class="section" id="sampling-a-subset-of-patients-in-cbioportal">
-<h2>Sampling a Subset of Patients in cBioPortal<a class="headerlink" href="#sampling-a-subset-of-patients-in-cbioportal" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-src.sample_patients">
+<span id="sampling-a-subset-of-patients-in-cbioportal"></span><h2>Sampling a Subset of Patients in cBioPortal<a class="headerlink" href="#module-src.sample_patients" title="Permalink to this headline">¶</a></h2>
+<p>Sample patients from the CSV file of cBioPortal gene variants.</p>
+<p>USAGE: python sample_patients.py &lt;MUTATION_CSV_FILE&gt; &lt;OUTPUT_CSV_FILE&gt; &lt;OPTIONAL_NUMBER_OF_PATIENTS&gt;</p>
+<p>Corresponding Author:   Joseph Wakim
+Affiliation:            Stanford
+Date:                   March 1, 2022</p>
+<dl class="function">
+<dt id="src.sample_patients.get_patient_mutation_data">
+<code class="sig-prename descclassname">src.sample_patients.</code><code class="sig-name descname">get_patient_mutation_data</code><span class="sig-paren">(</span><em class="sig-param">csv_path: str</em>, <em class="sig-param">patient_id: str</em>, <em class="sig-param">patient_column: int = 24</em>, <em class="sig-param">n_row_skip: Optional[int] = 1</em>, <em class="sig-param">ind_header_row: Optional[int] = 1</em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="_modules/src/sample_patients.html#get_patient_mutation_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.sample_patients.get_patient_mutation_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a table of mutation data associated with a single patient.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>csv_path</strong> (<em>str</em>) – Path to CSV file containing variant data</p></li>
+<li><p><strong>patient_id</strong> (<em>str</em>) – Patient ID for which the mutation data is requested</p></li>
+<li><p><strong>patient_column</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – Column index identifying patient identifiers in CSV file of variant data
+(default = 24)</p></li>
+<li><p><strong>n_row_skip</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – Number of rows corresponding to header information in variant CSV file
+(default = 2)</p></li>
+<li><p><strong>ind_header_row</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – Index of the header row, starting from 0 (default = 1)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Table of mutation data associated with the specific patient of interest</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.sample_patients.sample_patient_records">
+<code class="sig-prename descclassname">src.sample_patients.</code><code class="sig-name descname">sample_patient_records</code><span class="sig-paren">(</span><em class="sig-param">csv_path: str</em>, <em class="sig-param">out_path: str</em>, <em class="sig-param">patient_column: Optional[int] = 24</em>, <em class="sig-param">n_patients: Optional[int] = 1000</em>, <em class="sig-param">n_row_skip: Optional[int] = 2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/sample_patients.html#sample_patient_records"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.sample_patients.sample_patient_records" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a subset of patient records from a CSV file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>csv_path</strong> (<em>str</em>) – Path to CSV file containing variant data</p></li>
+<li><p><strong>out_path</strong> (<em>str</em>) – Path at which to save CSV file containing variant data from a subset of
+patients</p></li>
+<li><p><strong>patient_column</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – Column index identifying patient identifiers in CSV file of variant data
+(default = 24)</p></li>
+<li><p><strong>n_patients</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – Number of patients to sample from variant data CSV file (default = 1000)</p></li>
+<li><p><strong>n_row_skip</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – Number of rows corresponding to header information in variant CSV file
+(default = 2)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
-<div class="section" id="querying-our-ontology">
-<h2>Querying Our Ontology<a class="headerlink" href="#querying-our-ontology" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-src.query_therapy_regimen">
+<span id="querying-our-ontology"></span><h2>Querying Our Ontology<a class="headerlink" href="#module-src.query_therapy_regimen" title="Permalink to this headline">¶</a></h2>
+<p>Query for <cite>TherapyRegimen</cite> associated with mutated genes.</p>
+<p>Corresponding Authors:  Joseph Wakim, Vinodh Rajapakse
+Affiliation:            Stanford
+Date:                   March 3, 2022</p>
+<dl class="simple">
+<dt>USAGE: python query_therapy_regimen.py &lt;ONTOLOGY_PATH&gt; &lt;MUTATION_TABLE_PATH&gt;</dt><dd><p>&lt;GENE_LIST_PATH&gt; &lt;CLINICAL_DATA_PATH&gt; &lt;CANCER_TYPE_PATH&gt;
+&lt;PATIENT_NAME&gt; &lt;REGIMEN_SAVE_PATH&gt;</p>
+</dd>
+</dl>
+<dl class="function">
+<dt id="src.query_therapy_regimen.get_mutation_data">
+<code class="sig-prename descclassname">src.query_therapy_regimen.</code><code class="sig-name descname">get_mutation_data</code><span class="sig-paren">(</span><em class="sig-param">csv_path: str</em>, <em class="sig-param">gene_path: str</em>, <em class="sig-param">clinical_data_path: str</em>, <em class="sig-param">cancer_types_path: str</em>, <em class="sig-param">df_mutations: Optional[pandas.core.frame.DataFrame] = None</em>, <em class="sig-param">df_genes: Optional[pandas.core.frame.DataFrame] = None</em>, <em class="sig-param">df_clinical_data: Optional[pandas.core.frame.DataFrame] = None</em>, <em class="sig-param">df_cancer_types: Optional[pandas.core.frame.DataFrame] = None</em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="_modules/src/query_therapy_regimen.html#get_mutation_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.query_therapy_regimen.get_mutation_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get cBioPortal mutation data and add gene labels, if available.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>csv_path</strong> (<em>str</em>) – Path to csv file containing mutation data (if <cite>df_mutation</cite> is not None,
+this path has no effect)</p></li>
+<li><p><strong>gene_path</strong> (<em>str</em>) – Path to table of genes associated with cancer and their entrez IDs (if
+<cite>df_genes</cite> is not None, this path has no effect)</p></li>
+<li><p><strong>clinical_data_path</strong> (<em>str</em>) – Path to table of patient records with associated diseases (if
+<cite>df_clinical_data</cite> is not None, this path has no effect)</p></li>
+<li><p><strong>cancer_types_path</strong> (<em>str</em>) – Path to table of cancer types and abbreviations (if <cite>df_cancer_types</cite> is
+not None, this path has no effect)</p></li>
+<li><p><strong>df_mutations</strong> (<em>Optional</em><em>[</em><em>pd.DataFrame</em><em>]</em>) – If a mutation table is loaded as a Pandas DataFrame, you can enter the
+DataFrame object under this argument to avoid reloading the mutation
+data (default = None)</p></li>
+<li><p><strong>df_genes</strong> (<em>Optional</em><em>[</em><em>pd.DataFrame</em><em>]</em>) – If a gene table is already loaded as a Pandas DataFrame, you can enter
+the DataFrame object under this argument to avoid reloading the gene
+data (default = None)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Table of patients with mutations and associated genes</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.query_therapy_regimen.get_therapy_given_gene">
+<code class="sig-prename descclassname">src.query_therapy_regimen.</code><code class="sig-name descname">get_therapy_given_gene</code><span class="sig-paren">(</span><em class="sig-param">ontology: owlready2.namespace.Ontology</em>, <em class="sig-param">gene: str</em>, <em class="sig-param">evidence_level: str</em><span class="sig-paren">)</span> &#x2192; List[str]<a class="reference internal" href="_modules/src/query_therapy_regimen.html#get_therapy_given_gene"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.query_therapy_regimen.get_therapy_given_gene" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query ontology for therapy regimen associated with mutation in gene.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ontology</strong> (<em>or2.namespace.Ontology</em>) – OWL ontology from which to query therapy regimens matching mutated gene</p></li>
+<li><p><strong>gene</strong> (<em>str</em>) – Gene for which to query therapy regimen</p></li>
+<li><p><strong>evidence_level</strong> (<em>str</em>) – Evidence level of therapy regemen to query for in ontology</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>List of therapy regimens associated with gene of interest</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.query_therapy_regimen.get_therapy_given_gene_variant">
+<code class="sig-prename descclassname">src.query_therapy_regimen.</code><code class="sig-name descname">get_therapy_given_gene_variant</code><span class="sig-paren">(</span><em class="sig-param">ontology: owlready2.namespace.Ontology</em>, <em class="sig-param">gene: str</em>, <em class="sig-param">variant: str</em>, <em class="sig-param">evidence_level: str</em><span class="sig-paren">)</span> &#x2192; List[str]<a class="reference internal" href="_modules/src/query_therapy_regimen.html#get_therapy_given_gene_variant"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.query_therapy_regimen.get_therapy_given_gene_variant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query ontology for therapy matching gene and variant.</p>
+<p>Given a patient’s gene and variant, query the ontology for all therapy
+regimens.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ontology</strong> (<em>or2.namespace.Ontology</em>) – OWL ontology from which to query therapy regimens matching mutated gene</p></li>
+<li><p><strong>gene</strong> (<em>str</em>) – Gene for which to query therapy regimen</p></li>
+<li><p><strong>variant</strong> (<em>str</em>) – Specific variant of gene for which to query therapy regiment</p></li>
+<li><p><strong>evidence_level</strong> (<em>str</em>) – Evidence level of therapy regemen to query for in ontology</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>List of therapy regimens associated with the gene and variant</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.query_therapy_regimen.get_therapy_given_gene_variant_disease">
+<code class="sig-prename descclassname">src.query_therapy_regimen.</code><code class="sig-name descname">get_therapy_given_gene_variant_disease</code><span class="sig-paren">(</span><em class="sig-param">ontology: owlready2.namespace.Ontology</em>, <em class="sig-param">gene: str</em>, <em class="sig-param">variant: str</em>, <em class="sig-param">disease: str</em>, <em class="sig-param">evidence_level: str</em><span class="sig-paren">)</span> &#x2192; List[str]<a class="reference internal" href="_modules/src/query_therapy_regimen.html#get_therapy_given_gene_variant_disease"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.query_therapy_regimen.get_therapy_given_gene_variant_disease" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query ontology for therapy matching gene, variant, disease, and evidence.</p>
+<p>Given a patient’s gene, variant, and disease, query the ontology for
+therapy regimens with a specified evidence level.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ontology</strong> (<em>or2.namespace.Ontology</em>) – OWL ontology from which to query therapy regimens matching mutated gene</p></li>
+<li><p><strong>gene</strong> (<em>str</em>) – Gene for which to query therapy regimen</p></li>
+<li><p><strong>variant</strong> (<em>str</em>) – Specific variant of gene for which to query therapy regiment</p></li>
+<li><p><strong>disease</strong> (<em>str</em>) – Specific disease associated with gene and variant for which to query the
+ontology</p></li>
+<li><p><strong>evidence_level</strong> (<em>str</em>) – Evidence level of therapy regemen to query for in ontology</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>List of therapy regimens associated with the gene, variant, and disease
+matching records in the ontology</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.query_therapy_regimen.load_ongology">
+<code class="sig-prename descclassname">src.query_therapy_regimen.</code><code class="sig-name descname">load_ongology</code><span class="sig-paren">(</span><em class="sig-param">path: str</em><span class="sig-paren">)</span> &#x2192; owlready2.namespace.Ontology<a class="reference internal" href="_modules/src/query_therapy_regimen.html#load_ongology"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.query_therapy_regimen.load_ongology" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load ontology from specified file path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – Path to the ontology in the local directory</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Object representing the ontology in owlready2</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>or2.namespace.Ontology</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.query_therapy_regimen.main">
+<code class="sig-prename descclassname">src.query_therapy_regimen.</code><code class="sig-name descname">main</code><span class="sig-paren">(</span><em class="sig-param">ontology_path: str</em>, <em class="sig-param">mutation_path: str</em>, <em class="sig-param">gene_list_path: str</em>, <em class="sig-param">clinical_data_path: str</em>, <em class="sig-param">cancer_type_path: str</em>, <em class="sig-param">patient_id: str</em>, <em class="sig-param">regimen_save_path: str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/query_therapy_regimen.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#src.query_therapy_regimen.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save potential therapy regimen associated with mutated gene in patient.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ontology_path</strong> (<em>str</em>) – Path to our custom ontology combining biomedical data sources</p></li>
+<li><p><strong>mutation_path</strong> (<em>str</em>) – Path to patient mutation data extracted from cBioPortal</p></li>
+<li><p><strong>gene_list_path</strong> (<em>str</em>) – Path to table of genes associated with cancer and their entrez IDs</p></li>
+<li><p><strong>clinical_data_path</strong> (<em>str</em>) – Path to table of patient records with associated diseases</p></li>
+<li><p><strong>cancer_types_path</strong> (<em>str</em>) – Path to table of cancer types and abbreviations</p></li>
+<li><p><strong>patient_id</strong> (<em>str</em>) – Patient identifier matching record in cBioPortal mutation table</p></li>
+<li><p><strong>regimen_save_path</strong> (<em>str</em>) – Path at which to save list of regimens associated with each affected
+gene in the patient</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 </div>
 
